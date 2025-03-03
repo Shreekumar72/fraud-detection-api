@@ -10,7 +10,7 @@ app = FastAPI()
 model = joblib.load("fraud_detection_model.pkl")
 vectorizer = joblib.load("vectorizer.pkl")  # Ensure this file exists
 
-# ✅ Root endpoint to verify API is live (Fix for 405 Method Not Allowed)
+# ✅ Fix: Define Root Endpoint ("/") to Ensure API is Reachable
 @app.api_route("/", methods=["GET", "HEAD"])
 def home():
     return {"message": "Fraud Detection API is live!"}
@@ -19,7 +19,7 @@ def home():
 class FraudDetectionRequest(BaseModel):
     description: str
 
-# ✅ Fraud Detection Endpoint
+# ✅ Fraud Detection Prediction Endpoint
 @app.post("/predict/")
 async def predict(data: FraudDetectionRequest):
     # Convert text to numerical features
