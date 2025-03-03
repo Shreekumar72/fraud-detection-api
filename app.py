@@ -1,44 +1,39 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 import joblib
 import numpy as np
 from pydantic import BaseModel
 from sklearn.feature_extraction.text import TfidfVectorizer
 import os
-import uvicorn
 
-# ✅ Initialize FastAPI
+# ✅ Create FastAPI app
 app = FastAPI()
 
-# ✅ Load Model & Vectorizer (Ensure Files Exist)
-try:
-    model = joblib.load("fraud_detection_model.pkl")
-    vectorizer = joblib.load("vectorizer.pkl")
-except Exception as e:
-    raise RuntimeError(f"Error loading model/vectorizer: {e}")
+# ✅ Load the Model and Vectorizer
+model = joblib.load("fraud_detection_model.pkl")
+vectorizer = joblib.load("vectorizer.pkl")  # Ensure this file exists
 
-# ✅ Fix: Root Endpoint to Confirm API is Running
+# ✅ Define Root Endpoint to Ensure API is Reachable
 @app.api_route("/", methods=["GET", "HEAD"])
 def home():
     return {"message": "Fraud Detection API is live!"}
 
-# ✅ Define Input Schema
+# ✅ Define Request Body
 class FraudDetectionRequest(BaseModel):
     description: str
 
-# ✅ Fraud Prediction Endpoint (Fix Path)
+# ✅ Fraud Detection Prediction Endpoint
 @app.post("/predict/")
 async def predict(data: FraudDetectionRequest):
-    try:
-        transformed_text = vectorizer.transform([data.description]).toarray()
-        prediction = model.predict(transformed_text)[0]
+    # Convert text to numerical features
+    transformed_text = vectorizer.transform([data.description]).toarray()
+    prediction = model.predict(transformed_text)[0]
 
-        # Map prediction to labels
-        label_mapping = {0: "genuine", 1: "fraud"}
-        return {"type": label_mapping[prediction], "reason": "Automated fraud detection model result"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error during prediction: {e}")
+    # Map prediction to labels
+    label_mapping = {0: "genuine", 1: "fraud"}
+    return {"type": label_mapping[prediction], "reason": "Automated fraud detection model result"}
 
-# ✅ Fix: Ensure Correct Port Binding
+# ✅ Start the Uvicorn Server Correctly
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 10000))  # Use $PORT from Render
+    import uvicorn
+    port = int(os.getenv("PORT", 10000))  # Render assigns PORT dynamically
     uvicorn.run(app, host="0.0.0.0", port=port)
